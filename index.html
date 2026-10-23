@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SentryPrep - Pre-Deployment Tracker</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome for tactical iconography -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        tactical: {
+                            bg: '#121510',
+                            card: '#1e221b',
+                            cardLight: '#2a3026',
+                            border: '#3a4235',
+                            olive: '#3b4532',
+                            oliveLight: '#588157',
+                            amber: '#e09f3e',
+                            textMuted: '#a3b19b',
+                            textLight: '#f0f4ee',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar for mobile sleekness */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #121510;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3b4532;
+            border-radius: 4px;
+        }
+        /* Custom range slider styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 22px;
+            width: 22px;
+            border-radius: 50%;
+            background: #e09f3e;
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 0 0 10px rgba(224, 159, 62, 0.5);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #3a4235;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="bg-black font-sans text-tactical-textLight flex justify-center items-center min-h-screen p-0 sm:p-4 antialiased">
+
+    <!-- Mobile Frame Container -->
+    <div class="w-full max-w-md h-[100vh] sm:h-[880px] bg-tactical-bg sm:rounded-[36px] border-0 sm:border-4 border-tactical-border shadow-2xl flex flex-col overflow-hidden relative">
+
+        <!-- Top Status Bar Simulation -->
+        <div class="bg-tactical-bg px-6 pt-3 pb-2 flex justify-between items-center text-xs text-tactical-textMuted font-mono z-20 border-b border-tactical-border/30">
+            <div class="flex items-center space-x-1">
+                <span class="font-bold text-tactical-amber">SENTRYPREP</span>
+                <span class="text-[10px] bg-tactical-olive px-1.5 py-0.5 rounded text-tactical-textLight font-mono">UNIT 12B</span>
+            </div>
+            <div class="flex items-center space-x-2 text-[11px]">
+                <i class="fas fa-signal"></i>
+                <i class="fas fa-wifi"></i>
+                <i class="fas fa-battery-three-quarters text-tactical-amber"></i>
+                <span id="current-time">14:02</span>
+            </div>
+        </div>
+
+        <!-- Scrollable Main Viewport -->
+        <div class="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-20" id="main-content">
+
+            <!-- TAB 1: DASHBOARD VIEW -->
+            <div id="tab-dashboard" class="tab-content space-y-4">
+                
+                <!-- Deployment Countdown Hero Banner -->
+                <div class="bg-gradient-to-br from-tactical-card to-tactical-olive/40 border border-tactical-border rounded-2xl p-5 relative overflow-hidden shadow-lg">
+                    <div class="absolute -right-6 -bottom-6 text-tactical-olive/10 text-9xl font-black select-none pointer-events-none">
+                        12B
+                    </div>
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-tactical-textMuted flex items-center">
+                            <i class="fas fa-[#e09f3e] fa-clock text-tactical-amber mr-1.5"></i> Deployment Countdown
+                        </span>
+                        <span class="text-[10px] font-bold bg-tactical-amber/20 text-tactical-amber border border-tactical-amber/30 px-2 py-0.5 rounded-full uppercase">
+                            Pre-Deployment Training
+                        </span>
+                    </div>
+
+                    <div class="flex items-baseline space-x-2 my-2">
+                        <span class="text-5xl font-black tracking-tight text-white" id="countdown-days">41</span>
+                        <span class="text-xl font-bold text-tactical-amber">DAYS</span>
+                        <span class="text-xs text-tactical-textMuted ml-auto font-mono">TARGET: 27 OCT</span>
+                    </div>
+
+                    <div class="w-full bg-tactical-bg/80 h-2 rounded-full overflow-hidden border border-tactical-border/50 mt-3">
+                        <div class="bg-gradient-to-r from-tactical-oliveLight to-tactical-amber h-full w-[68%]" id="countdown-progress-bar"></div>
+                    </div>
+                    <div class="flex justify-between text-[10px] font-mono text-tactical-textMuted mt-1.5">
+                        <span>PHASE 2 / 3</span>
+                        <span>68% PREPARED</span>
+                    </div>
+                </div>
+
+                <!-- Quick Readiness Status Pill -->
+                <div class="bg-tactical-card border border-tactical-border rounded-xl p-3 flex items-center justify-between shadow-sm">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-lg bg-tactical-oliveLight/20 border border-tactical-oliveLight/40 flex items-center justify-center text-tactical-oliveLight">
+                            <i class="fas fa-shield-halved text-lg"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-bold text-white uppercase">Combat Readiness Index</h4>
+                            <p class="text-[11px] text-tactical-textMuted" id="readiness-summary">Overall Status: <span class="text-tactical-amber font-semibold">OPTIMAL</span></p>
+                        </div>
+                    </div>
+                    <button onclick="switchTab('readiness')" class="text-xs bg-tactical-olive hover:bg-tactical-oliveLight text-white px-3 py-1.5 rounded-lg font-medium transition">
+                        View Logs
+                    </button>
+                </div>
+
+                <!-- Pre-Deployment Checklist Widget -->
+                <div class="bg-tactical-card border border-tactical-border rounded-2xl p-4 space-y-3 shadow-md">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-sm font-bold text-white flex items-center uppercase tracking-wide">
+                            <i class="fas fa-list-check text-tactical-amber mr-2"></i> Readiness Checklist
+                        </h3>
+                        <span class="text-xs font-mono bg-tactical-bg px-2 py-1 rounded border border-tactical-border text-tactical-amber" id="checklist-percentage">
+                            74% Complete
+                        </span>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="w-full bg-tactical-bg h-2 rounded-full overflow-hidden border border-tactical-border">
+                        <div class="bg-tactical-amber h-full transition-all duration-300" id="checklist-progress-bar" style="width: 74%;"></div>
+                    </div>
+
+                    <!-- Interactive Checklist Items (Preview) -->
+                    <div class="space-y-2 pt-1" id="dashboard-checklist-container">
+                        <!-- Items populated via JS -->
+                    </div>
+
+                    <button onclick="switchTab('checklist')" class="w-full py-2 bg-tactical-bg hover:bg-tactical-cardLight text-tactical-textMuted text-xs font-semibold rounded-lg border border-tactical-border flex items-center justify-center space-x-1 transition">
+                        <span>Open Full Checklist</span>
+                        <i class="fas fa-arrow-right text-[10px]"></i>
+                    </button>
+                </div>
+
+                <!-- Daily Health Snapshots -->
+                <div class="grid grid-cols-2 gap-3">
+                    <!-- Sleep Card -->
+                    <div class="bg-tactical-card border border-tactical-border rounded-xl p-3 space-y-2">
+                        <div class="flex justify-between items-center text-xs text-tactical-textMuted">
+                            <span class="font-semibold text-tactical-textLight flex items-center"><i class="fas fa-moon text-blue-400 mr-1.5"></i> Sleep Log</span>
+                            <span class="text-[10px] text-emerald-400 font-mono">GOAL 7H+</span>
+                        </div>
+                        <div class="flex items-baseline space-x-1">
+                            <span class="text-2xl font-black text-white" id="dash-sleep-hours">7.5</span>
+                            <span class="text-xs text-tactical-textMuted">hrs last night</span>
+                        </div>
+                        <div class="w-full bg-tactical-bg h-1.5 rounded-full overflow-hidden">
+                            <div class="bg-blue-400 h-full rounded-full" id="dash-sleep-bar" style="width: 85%;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Diet Card -->
+                    <div class="bg-tactical-card border border-tactical-border rounded-xl p-3 space-y-2">
+                        <div class="flex justify-between items-center text-xs text-tactical-textMuted">
+                            <span class="font-semibold text-tactical-textLight flex items-center"><i class="fas fa-utensils text-tactical-amber mr-1.5"></i> Nutrition</span>
+                            <span class="text-[10px] text-tactical-amber font-mono">BALANCED</span>
+                        </div>
+                        <div class="flex items-baseline space-x-1">
+                            <span class="text-2xl font-black text-white" id="dash-diet-type">MRE +</span>
+                            <span class="text-xs text-tactical-textMuted">Protein</span>
+                        </div>
+                        <div class="w-full bg-tactical-bg h-1.5 rounded-full overflow-hidden flex">
+                            <div class="bg-tactical-amber h-full" style="width: 40%;"></div>
+                            <div class="bg-emerald-500 h-full" style="width: 40%;"></div>
+                            <div class="bg-blue-500 h-full" style="width: 20%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- TAB 2: LOG & READINESS VIEW -->
+            <div id="tab-readiness" class="tab-content hidden space-y-4">
+                
+                <!-- Header -->
+                <div class="flex justify-between items-center">
+                    <h2 class="text-base font-bold text-white uppercase tracking-wider flex items-center">
+                        <i class="fas fa-heart-pulse text-tactical-amber mr-2"></i> Readiness & Health
+                    </h2>
+                    <span class="text-xs text-tactical-textMuted font-mono" id="log-date-display">TODAY</span>
+                </div>
+
+                <!-- Quick Daily Log Input Box -->
+                <div class="bg-tactical-card border border-tactical-border rounded-2xl p-4 space-y-4 shadow-md">
+                    <h3 class="text-xs font-bold text-tactical-amber uppercase tracking-wider border-b border-tactical-border pb-2">
+                        <i class="fas fa-pen-to-square mr-1"></i> Fast Daily Entry
+                    </h3>
+
+                    <!-- Sleep Slider Input -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-xs">
+                            <label class="text-tactical-textLight font-semibold">Hours Slept</label>
+                            <span class="font-mono text-tactical-amber font-bold text-sm" id="sleep-slider-val">7.5 hrs</span>
+                        </div>
+                        <input type="range" id="sleep-input" min="3" max="12" step="0.5" value="7.5" class="w-full" oninput="updateSleepVal(this.value)">
+                        <div class="flex justify-between text-[10px] font-mono text-tactical-textMuted">
+                            <span>3 hrs (Low)</span>
+                            <span>7.5 hrs (Target)</span>
+                            <span>12 hrs</span>
+                        </div>
+                    </div>
+
+                    <!-- Recovery Rating Stars -->
+                    <div class="space-y-1">
+                        <label class="text-xs text-tactical-textLight font-semibold block">Energy & Recovery Feeling</label>
+                        <div class="flex space-x-2" id="star-rating-container">
+                            <button type="button" onclick="setRating(1)" class="star-btn text-tactical-amber text-lg"><i class="fas fa-star"></i></button>
+                            <button type="button" onclick="setRating(2)" class="star-btn text-tactical-amber text-lg"><i class="fas fa-star"></i></button>
+                            <button type="button" onclick="setRating(3)" class="star-btn text-tactical-amber text-lg"><i class="fas fa-star"></i></button>
+                            <button type="button" onclick="setRating(4)" class="star-btn text-tactical-amber text-lg"><i class="fas fa-star"></i></button>
+                            <button type="button" onclick="setRating(5)" class="star-btn text-tactical-border text-lg"><i class="fas fa-star"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- Diet Quick Preset Buttons -->
+                    <div class="space-y-2 pt-2 border-t border-tactical-border/50">
+                        <label class="text-xs text-tactical-textLight font-semibold block">Meal Composition Preset</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="selectMealPreset('Protein-Rich', 45, 35, 20)" class="meal-preset-btn bg-tactical-bg hover:bg-tactical-olive border border-tactical-border p-2 rounded-lg text-left transition flex items-center space-x-2 active-meal">
+                                <i class="fas fa-drumstick-bite text-tactical-amber text-xs"></i>
+                                <div>
+                                    <p class="text-xs font-bold text-white">Protein-Rich</p>
+                                    <p class="text-[9px] text-tactical-textMuted">45% P / 35% C / 20% F</p>
+                                </div>
+                            </button>
+                            <button onclick="selectMealPreset('Balanced Carb', 25, 55, 20)" class="meal-preset-btn bg-tactical-bg hover:bg-tactical-olive border border-tactical-border p-2 rounded-lg text-left transition flex items-center space-x-2">
+                                <i class="fas fa-bowl-rice text-blue-400 text-xs"></i>
+                                <div>
+                                    <p class="text-xs font-bold text-white">Balanced Carb</p>
+                                    <p class="text-[9px] text-tactical-textMuted">25% P / 55% C / 20% F</p>
+                                </div>
+                            </button>
+                            <button onclick="selectMealPreset('Field MRE', 20, 60, 20)" class="meal-preset-btn bg-tactical-bg hover:bg-tactical-olive border border-tactical-border p-2 rounded-lg text-left transition flex items-center space-x-2">
+                                <i class="fas fa-box text-emerald-400 text-xs"></i>
+                                <div>
+                                    <p class="text-xs font-bold text-white">Field MRE</p>
+                                    <p class="text-[9px] text-tactical-textMuted">High Energy Ratio</p>
+                                </div>
+                            </button>
+                            <button onclick="selectMealPreset('Light Snack', 15, 65, 20)" class="meal-preset-btn bg-tactical-bg hover:bg-tactical-olive border border-tactical-border p-2 rounded-lg text-left transition flex items-center space-x-2">
+                                <i class="fas fa-apple-whole text-red-400 text-xs"></i>
+                                <div>
+                                    <p class="text-xs font-bold text-white">Quick Snack</p>
+                                    <p class="text-[9px] text-tactical-textMuted">Low Cal / Quick Carbs</p>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Portion Size -->
+                    <div class="space-y-1">
+                        <label class="text-xs text-tactical-textLight font-semibold block">Portion Intake</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button onclick="selectPortion('Light')" class="portion-btn py-1.5 text-xs bg-tactical-bg border border-tactical-border rounded text-tactical-textMuted hover:text-white">Light</button>
+                            <button onclick="selectPortion('Full')" class="portion-btn py-1.5 text-xs bg-tactical-amber text-tactical-bg font-bold border border-tactical-amber rounded active-portion">Full Meal</button>
+                            <button onclick="selectPortion('Heavy')" class="portion-btn py-1.5 text-xs bg-tactical-bg border border-tactical-border rounded text-tactical-textMuted hover:text-white">Heavy</button>
+                        </div>
+                    </div>
+
+                    <button onclick="submitDailyLog()" class="w-full py-2.5 bg-tactical-amber hover:bg-amber-500 text-tactical-bg font-bold text-xs rounded-xl shadow-lg transition uppercase tracking-wider flex items-center justify-center space-x-2">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Submit Today's Log</span>
+                    </button>
+                </div>
+
+                <!-- Visual Metrics & Charts Section -->
+                <div class="space-y-4">
+                    
+                    <!-- Diet Macro Breakdown Pie/Donut Chart -->
+                    <div class="bg-tactical-card border border-tactical-border rounded-2xl p-4 space-y-3">
+                        <div class="flex justify-between items-center">
+                            <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center">
+                                <i class="fas fa-chart-pie text-tactical-amber mr-2"></i> Weekly Diet Macro Ratio
+                            </h4>
+                            <span class="text-[10px] text-tactical-textMuted font-mono" id="current-diet-label">Protein-Rich</span>
+                        </div>
+                        <div class="h-44 relative flex items-center justify-center">
+                            <canvas id="dietPieChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Weekly Sleep Log Bar Chart -->
+                    <div class="bg-tactical-card border border-tactical-border rounded-2xl p-4 space-y-3">
+                        <div class="flex justify-between items-center">
+                            <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center">
+                                <i class="fas fa-chart-column text-blue-400 mr-2"></i> Weekly Sleep Duration (Hrs)
+                            </h4>
+                            <span class="text-[10px] text-emerald-400 font-mono">AVG: 7.2 hrs</span>
+                        </div>
+                        <div class="h-40 relative">
+                            <canvas id="sleepBarChart"></canvas>
+                        </div>
+                        <!-- Operational Insight Badge -->
+                        <div class="bg-tactical-bg border border-tactical-border/60 rounded-xl p-2.5 flex items-start space-x-2 text-xs">
+                            <i class="fas fa-circle-info text-tactical-amber mt-0.5 text-sm"></i>
+                            <p class="text-[11px] text-tactical-textMuted leading-tight">
+                                <span class="text-white font-semibold">Combat Readiness Insight:</span> Sleep trend is meeting the <span class="text-emerald-400 font-medium">7+ hour military standard</span> for maximum cognitive alertness during drills.
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- TAB 3: FULL CHECKLIST VIEW -->
+            <div id="tab-checklist" class="tab-content hidden space-y-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-base font-bold text-white uppercase tracking-wider flex items-center">
+                            <i class="fas fa-clipboard-check text-tactical-amber mr-2"></i> Pre-Deployment Checklist
+                        </h2>
+                        <p class="text-xs text-tactical-textMuted">Complete all mandatory readiness tasks prior to ship date.</p>
+                    </div>
+                </div>
+
+                <!-- Filter Pills -->
+                <div class="flex space-x-2">
+                    <button onclick="filterChecklist('all')" class="chk-filter-btn px-3 py-1 bg-tactical-amber text-tactical-bg text-xs font-bold rounded-lg">All</button>
+                    <button onclick="filterChecklist('pending')" class="chk-filter-btn px-3 py-1 bg-tactical-card text-tactical-textMuted text-xs font-bold rounded-lg hover:text-white">Pending</button>
+                    <button onclick="filterChecklist('completed')" class="chk-filter-btn px-3 py-1 bg-tactical-card text-tactical-textMuted text-xs font-bold rounded-lg hover:text-white">Completed</button>
+                </div>
+
+                <!-- Full Checklist Container -->
+                <div class="bg-tactical-card border border-tactical-border rounded-2xl p-4 space-y-3" id="full-checklist-container">
+                    <!-- Checkbox items generated via JS -->
+                </div>
+            </div>
+
+            <!-- TAB 4: SETTINGS VIEW -->
+            <div id="tab-settings" class="tab-content hidden space-y-4">
+                <h2 class="text-base font-bold text-white uppercase tracking-wider flex items-center">
+                    <i class="fas fa-gear text-tactical-amber mr-2"></i> Unit & Soldier Settings
+                </h2>
+
+                <div class="bg-tactical-card border border-tactical-border rounded-2xl p-4 space-y-4">
+                    <div class="flex items-center space-x-3 pb-3 border-b border-tactical-border">
+                        <div class="w-12 h-12 rounded-full bg-tactical-olive flex items-center justify-center text-white font-bold text-lg border border-tactical-amber">
+                            PV2
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-white">Soldier Profile</h3>
+                            <p class="text-xs text-tactical-textMuted">Unit 12B • Infantry Brigade</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 text-xs">
+                        <div>
+                            <label class="text-tactical-textMuted block mb-1">Target Deployment Date</label>
+                            <input type="date" value="2026-10-27" class="w-full bg-tactical-bg border border-tactical-border text-tactical-textLight rounded p-2 focus:outline-none focus:border-tactical-amber">
+                        </div>
+
+                        <div>
+                            <label class="text-tactical-textMuted block mb-1">Assigned Unit</label>
+                            <input type="text" value="Alpha Company - Unit 12B" class="w-full bg-tactical-bg border border-tactical-border text-tactical-textLight rounded p-2 focus:outline-none focus:border-tactical-amber">
+                        </div>
+
+                        <div class="flex items-center justify-between pt-2">
+                            <span>Daily Readiness Reminders</span>
+                            <input type="checkbox" checked class="accent-tactical-amber w-4 h-4">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Toast Notification Popup -->
+        <div id="toast-notification" class="absolute top-12 left-1/2 transform -translate-x-1/2 bg-tactical-amber text-tactical-bg text-xs font-bold px-4 py-2 rounded-xl shadow-2xl flex items-center space-x-2 transition-all duration-300 opacity-0 pointer-events-none z-50">
+            <i class="fas fa-shield-check text-sm"></i>
+            <span id="toast-message">Daily log submitted successfully!</span>
+        </div>
+
+        <!-- Bottom Navigation Bar -->
+        <div class="bg-tactical-card border-t border-tactical-border px-4 py-2.5 flex justify-around items-center z-30">
+            <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn text-tactical-amber flex flex-col items-center space-y-0.5">
+                <i class="fas fa-house text-base"></i>
+                <span class="text-[10px] font-semibold">Dashboard</span>
+            </button>
+            <button onclick="switchTab('readiness')" id="nav-readiness" class="nav-btn text-tactical-textMuted hover:text-tactical-textLight flex flex-col items-center space-y-0.5">
+                <i class="fas fa-heart-pulse text-base"></i>
+                <span class="text-[10px] font-semibold">Log & Health</span>
+            </button>
+            <button onclick="switchTab('checklist')" id="nav-checklist" class="nav-btn text-tactical-textMuted hover:text-tactical-textLight flex flex-col items-center space-y-0.5">
+                <i class="fas fa-list-check text-base"></i>
+                <span class="text-[10px] font-semibold">Checklist</span>
+            </button>
+            <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn text-tactical-textMuted hover:text-tactical-textLight flex flex-col items-center space-y-0.5">
+                <i class="fas fa-sliders text-base"></i>
+                <span class="text-[10px] font-semibold">Settings</span>
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Application Logic Script -->
+    <script>
+        // State Management
+        let checklistData = [
+            { id: 1, text: "Personal Legal & Wills Completed", category: "Legal", checked: true },
+            { id: 2, text: "Family Care Plan Submitted", category: "Family", checked: false },
+            { id: 3, text: "Financial & Direct Deposit Audit", category: "Finance", checked: false },
+            { id: 4, text: "Field Gear & Uniform Inspection", category: "Equipment", checked: true },
+            { id: 5, text: "Medical & Dental Readiness Clearance", category: "Medical", checked: true },
+            { id: 6, text: "Immunization & Vaccine Record Update", category: "Medical", checked: true },
+            { id: 7, text: "Emergency Contact Designation", category: "Admin", checked: false }
+        ];
+
+        let currentSleepHours = 7.5;
+        let selectedMeal = { name: 'Protein-Rich', p: 45, c: 35, f: 20 };
+        let selectedPortion = 'Full';
+        let currentRating = 4;
+
+        let dietPieChartInstance = null;
+        let sleepBarChartInstance = null;
+
+        // Initialize App
+        window.onload = function() {
+            renderChecklists();
+            initCharts();
+            updateTime();
+            setInterval(updateTime, 60000);
+        };
+
+        function updateTime() {
+            const now = new Date();
+            const hrs = String(now.getHours()).padStart(2, '0');
+            const mins = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('current-time').innerText = `${hrs}:${mins}`;
+        }
+
+        // Tab Switching Logic
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-btn').forEach(el => {
+                el.classList.remove('text-tactical-amber');
+                el.classList.add('text-tactical-textMuted');
+            });
+
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            const activeNav = document.getElementById(`nav-${tabName}`);
+            activeNav.classList.remove('text-tactical-textMuted');
+            activeNav.classList.add('text-tactical-amber');
+
+            // Re-render chart sizing on view switch
+            if (tabName === 'readiness' && dietPieChartInstance) {
+                setTimeout(() => {
+                    dietPieChartInstance.resize();
+                    sleepBarChartInstance.resize();
+                }, 50);
+            }
+        }
+
+        // Checklist Rendering & Toggle
+        function renderChecklists(filter = 'all') {
+            const dashContainer = document.getElementById('dashboard-checklist-container');
+            const fullContainer = document.getElementById('full-checklist-container');
+            
+            dashContainer.innerHTML = '';
+            fullContainer.innerHTML = '';
+
+            const completedCount = checklistData.filter(i => i.checked).length;
+            const percentage = Math.round((completedCount / checklistData.length) * 100);
+
+            // Update UI Counters
+            document.getElementById('checklist-percentage').innerText = `${percentage}% Complete`;
+            document.getElementById('checklist-progress-bar').style.width = `${percentage}%`;
+
+            checklistData.forEach(item => {
+                // Filter handling
+                if (filter === 'pending' && item.checked) return;
+                if (filter === 'completed' && !item.checked) return;
+
+                const itemHTML = `
+                    <div onclick="toggleChecklist(${item.id})" class="flex items-center justify-between p-2.5 rounded-xl bg-tactical-bg border border-tactical-border/60 hover:border-tactical-amber/50 cursor-pointer transition select-none">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-5 h-5 rounded border ${item.checked ? 'bg-tactical-amber border-tactical-amber text-tactical-bg' : 'border-tactical-textMuted'} flex items-center justify-center text-xs">
+                                ${item.checked ? '<i class="fas fa-check font-bold"></i>' : ''}
+                            </div>
+                            <span class="text-xs ${item.checked ? 'line-through text-tactical-textMuted' : 'text-tactical-textLight font-medium'}">${item.text}</span>
+                        </div>
+                        <span class="text-[9px] font-mono uppercase bg-tactical-card px-1.5 py-0.5 rounded text-tactical-textMuted border border-tactical-border">${item.category}</span>
+                    </div>
+                `;
+
+                fullContainer.innerHTML += itemHTML;
+            });
+
+            // Dashboard shows only first 3 items for brevity
+            checklistData.slice(0, 3).forEach(item => {
+                const dashHTML = `
+                    <div onclick="toggleChecklist(${item.id})" class="flex items-center space-x-3 p-2 rounded-lg bg-tactical-bg/70 border border-tactical-border/40 cursor-pointer text-xs">
+                        <div class="w-4 h-4 rounded border ${item.checked ? 'bg-tactical-amber border-tactical-amber text-tactical-bg' : 'border-tactical-textMuted'} flex items-center justify-center text-[10px]">
+                            ${item.checked ? '<i class="fas fa-check font-bold"></i>' : ''}
+                        </div>
+                        <span class="${item.checked ? 'line-through text-tactical-textMuted' : 'text-tactical-textLight'} truncate">${item.text}</span>
+                    </div>
+                `;
+                dashContainer.innerHTML += dashHTML;
+            });
+        }
+
+        function toggleChecklist(id) {
+            const item = checklistData.find(i => i.id === id);
+            if (item) {
+                item.checked = !item.checked;
+                renderChecklists();
+            }
+        }
+
+        function filterChecklist(type) {
+            document.querySelectorAll('.chk-filter-btn').forEach(btn => {
+                btn.classList.remove('bg-tactical-amber', 'text-tactical-bg');
+                btn.classList.add('bg-tactical-card', 'text-tactical-textMuted');
+            });
+            event.target.classList.remove('bg-tactical-card', 'text-tactical-textMuted');
+            event.target.classList.add('bg-tactical-amber', 'text-tactical-bg');
+            renderChecklists(type);
+        }
+
+        // Daily Logging Interactive Functions
+        function updateSleepVal(val) {
+            currentSleepHours = parseFloat(val);
+            document.getElementById('sleep-slider-val').innerText = `${currentSleepHours} hrs`;
+        }
+
+        function setRating(rating) {
+            currentRating = rating;
+            const stars = document.querySelectorAll('#star-rating-container button i');
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.className = 'fas fa-star text-tactical-amber';
+                } else {
+                    star.className = 'fas fa-star text-tactical-border';
+                }
+            });
+        }
+
+        function selectMealPreset(name, p, c, f) {
+            selectedMeal = { name, p, c, f };
+            document.querySelectorAll('.meal-preset-btn').forEach(btn => {
+                btn.classList.remove('border-tactical-amber', 'bg-tactical-olive/40');
+            });
+            event.currentTarget.classList.add('border-tactical-amber', 'bg-tactical-olive/40');
+        }
+
+        function selectPortion(portion) {
+            selectedPortion = portion;
+            document.querySelectorAll('.portion-btn').forEach(btn => {
+                btn.className = 'portion-btn py-1.5 text-xs bg-tactical-bg border border-tactical-border rounded text-tactical-textMuted hover:text-white';
+            });
+            event.currentTarget.className = 'portion-btn py-1.5 text-xs bg-tactical-amber text-tactical-bg font-bold border border-tactical-amber rounded';
+        }
+
+        function submitDailyLog() {
+            // Update Dashboard View Snapshots
+            document.getElementById('dash-sleep-hours').innerText = currentSleepHours;
+            const sleepPercent = Math.min(Math.round((currentSleepHours / 9) * 100), 100);
+            document.getElementById('dash-sleep-bar').style.width = `${sleepPercent}%`;
+            document.getElementById('dash-diet-type').innerText = selectedMeal.name;
+
+            // Update Donut Chart
+            if (dietPieChartInstance) {
+                dietPieChartInstance.data.datasets[0].data = [selectedMeal.p, selectedMeal.c, selectedMeal.f];
+                dietPieChartInstance.update();
+                document.getElementById('current-diet-label').innerText = `${selectedMeal.name} (${selectedPortion})`;
+            }
+
+            // Update Bar Chart Saturday (Today) Value
+            if (sleepBarChartInstance) {
+                sleepBarChartInstance.data.datasets[0].data[6] = currentSleepHours;
+                sleepBarChartInstance.update();
+            }
+
+            showToast("Daily readiness log recorded!");
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast-notification');
+            document.getElementById('toast-message').innerText = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 2500);
+        }
+
+        // Initialize Chart.js Data Visualizations
+        function initCharts() {
+            // Chart 1: Macro Donut Chart
+            const dietCtx = document.getElementById('dietPieChart').getContext('2d');
+            dietPieChartInstance = new Chart(dietCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Protein %', 'Carbs %', 'Fats %'],
+                    datasets: [{
+                        data: [45, 35, 20],
+                        backgroundColor: ['#e09f3e', '#60a5fa', '#10b981'],
+                        borderWidth: 2,
+                        borderColor: '#1e221b'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: '#a3b19b',
+                                font: { size: 10, family: 'Inter' },
+                                boxWidth: 12
+                            }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+
+            // Chart 2: Weekly Sleep Bar Chart
+            const sleepCtx = document.getElementById('sleepBarChart').getContext('2d');
+            sleepBarChartInstance = new Chart(sleepCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+                    datasets: [{
+                        label: 'Hours Slept',
+                        data: [6.5, 7.0, 8.0, 6.0, 7.5, 7.0, 7.5],
+                        backgroundColor: '#588157',
+                        hoverBackgroundColor: '#e09f3e',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 10,
+                            ticks: { color: '#a3b19b', font: { size: 9 } },
+                            grid: { color: '#2a3026' }
+                        },
+                        x: {
+                            ticks: { color: '#a3b19b', font: { size: 9 } },
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
